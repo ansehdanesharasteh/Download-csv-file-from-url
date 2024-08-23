@@ -1,1 +1,76 @@
+#Importing the related libraries
+import numpy as np
+import pandas as pd
+import datetime as dt
+import os
+import glob
+
+##For each state we downloaded the county-level temparature data for the past 20 years and now we want to combine them into 1 whole temparature data
+#Read all .csv files from a directory
+
+temp_path= "../Temparature 2022_data"
+csv_files = glob.glob(os.path.join(temp_path, "*.csv"))
+
+#Reading csv files
+col_names= ['Date', 'Avg_temp']
+temp_2022= pd.read_csv(csv_files[0], header=None)
+county= temp_2022.loc[0, 0]
+state= temp_2022.loc[0, 1]
+temp_2022= temp_2022.iloc[5:, 0:2].reset_index(drop= True)
+temp_2022.columns= cols
+temp_2022['County']= county
+temp_2022['State']= state
+
+# loop over the list of csv files and add them to the main file
+for f in range(1,len(csv_files)):
+    df = pd.read_csv(csv_files[f], header=None)
+    county= df.loc[0, 0]
+    state= df.loc[0, 1]
+    df= df.iloc[5:, 0:2].reset_index(drop= True)
+    df.columns= cols
+    df['County']= county
+    df['State']= state
+    temp_2022= temp_2022.append(df, ignore_index=True)
+
+# Clean the final temparature file
+temp_2022= temp_2022.drop_duplicates()
+temp_2022['County']= temp_2022['County'].str.strip()
+temp_2022['State']= temp_2022['State'].str.strip()
+temp_2022= temp_2022[temp_2022['Date'].notnull()].reset_index(drop= True)
+
+#Find month and year from the date variable
+for i in range(len(temp_2022)):
+    temp_2022.loc[i, 'year']=''.join( list(temp_2022.loc[i,'Date'][0:4]))
+    temp_2022.loc[i, 'month']=''.join( list(temp_2022.loc[i,'Date'][4:6]))
+    
+#Make sure month and year variables are integer values
+temp_2022['year']= temp_2022['year'].astype('int')
+temp_2022['month']= temp_2022['month'].astype('int')
+
+#Adding county fips to data
+county_fips= pd.read_csv('../county_fips_master.csv', encoding = "ISO-8859-1")
+county_fips= county_fips[['fips', 'county_name', 'state_name']]
+temp_2022= pd.merge(temp_2022, county_fips, on=['state', 'county'], how= 'left')
+
+#Manually fill fips codes that were not included in the county_fips file
+temp_2022.loc[(temp_2022['State']== 'Alaska') & (temp_2022['County']== 'Chugach Census Area'), 'fips']= 2163
+temp_2022.loc[(temp_2022['State']== 'Alaska') & (temp_2022['County']== 'Copper River Census Area'), 'fips']= 2166
+temp_2022.loc[(temp_2022['State']== 'D.C.') & (temp_2022['County']== 'Washington'), 'fips']= 11001
+temp_2022.loc[(temp_2022['State']== 'Kentucky') & (temp_2022['County']== 'Clark County'), 'fips']= 21049
+temp_2022.loc[(temp_2022['State']== 'Maine') & (temp_2022['County']== 'Somerset County'), 'fips']= 24039
+temp_2022.loc[(temp_2022['State']== 'Maryland') & (temp_2022['County']== 'Baltimore City'), 'fips']= 24005
+temp_2022.loc[(temp_2022['State']== 'Missouri') & (temp_2022['County']== 'St. Louis City'), 'fips']= 29189
+temp_2022.loc[(temp_2022['State']== 'New Mexico') & (temp_2022['County']== 'Dona Ana County'), 'fips']= 35013
+temp_2022.loc[(temp_2022['State']== 'Tennessee') & (temp_2022['County']== 'Marshall County'), 'fips']= 47117
+temp_2022.loc[(temp_2022['State']== 'Virginia') & (temp_2022['County']== 'Lexington City'), 'avg_temp']= 68
+temp_2022.loc[len(temp_2022.index)]= [11001, 'District of Columbia', 'District of Columbia', 56.2, 2022]
+
+temp_2022= temp_2022[['fips', 'year', 'month', 'state', 'county', 'Avg_temp']]
+temp_2022= temp_2022.sort_values(['State', 'County']).reset_index(drop= True)
+temp_2022= temp_2022.rename(columns= {'State': 'state', 'County': 'county', 'Avg_temp': 'temprature'})
+
+temp_2022.to_csv("../final_temp_2022.csv", index= False)
+
+
+
 
