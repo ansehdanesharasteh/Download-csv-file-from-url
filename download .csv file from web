@@ -25,15 +25,12 @@ states= ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', '
           'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington', 'West Virginia', 'West Virginia',
           'Wisconsin', 'Wyoming']
 
-#Percipitation URL
-percipitation_url_2022= 'https://www.ncei.noaa.gov/cag/county/mapping/1/pcp/202207/7/value'
-
-#Temprature URL
-temprature_url_2022= "https://www.ncei.noaa.gov/cag/county/mapping/1/tavg/202207/7/value"
+# URL
+temprature_url= "https://www.ncei.noaa.gov/cag/county/mapping/1/tavg/202207/7/value"
 
 ##Set the driver for chrome browser
 browser = webdriver.Chrome()
-browser.get(percipitation_url_2022)
+browser.get(temprature_url)
 
 ##Get states from NCEI website 
 state_element= browser.find_element('id', 'location')
